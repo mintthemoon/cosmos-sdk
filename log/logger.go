@@ -1,12 +1,31 @@
 package log
 
-import cmtlog "github.com/cometbft/cometbft/libs/log"
+import (
+	"os"
+	"time"
 
-// Logger is the interface that wraps the basic logging methods.
+	"github.com/rs/zerolog"
+)
+
+// Logger defines the interface for logging in the SDK
 type Logger interface {
-	Debug(msg string, keyvals ...interface{})
-	Info(msg string, keyvals ...interface{})
-	Error(msg string, keyvals ...interface{})
+	// TODO define a good interface
+}
 
-	With(keyvals ...interface{}) cmtlog.Logger
+// Defines commons keys for logging
+const ModuleKey = "module"
+
+// ContextKey is used to store the logger in the context
+var ContextKey struct{}
+
+func NewZeroLogger(key, value string) Logger {
+	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.Kitchen}
+	logger := zerolog.New(output).With().Str(key, value).Timestamp().Logger()
+	return &logger
+}
+
+func NewLogger() Logger {
+	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.Kitchen}
+	logger := zerolog.New(output).With().Timestamp().Logger()
+	return &logger
 }

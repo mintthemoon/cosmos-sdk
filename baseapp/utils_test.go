@@ -8,23 +8,22 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"reflect"
 	"strconv"
 	"testing"
 	"unsafe"
 
-	runtimev1alpha1 "cosmossdk.io/api/cosmos/app/runtime/v1alpha1"
-	appv1alpha1 "cosmossdk.io/api/cosmos/app/v1alpha1"
-	"cosmossdk.io/core/appconfig"
-	"cosmossdk.io/depinject"
-	sdkmath "cosmossdk.io/math"
-	"github.com/cometbft/cometbft/libs/log"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
+	runtimev1alpha1 "cosmossdk.io/api/cosmos/app/runtime/v1alpha1"
+	appv1alpha1 "cosmossdk.io/api/cosmos/app/v1alpha1"
+	"cosmossdk.io/core/appconfig"
+	"cosmossdk.io/depinject"
+	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -55,7 +54,7 @@ var ParamStoreKey = []byte("paramstore")
 
 func defaultLogger() log.Logger {
 	if testing.Verbose() {
-		return log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "baseapp/test")
+		return log.NewZeroLogger("module", "baseapp/test")
 	}
 
 	return log.NewNopLogger()

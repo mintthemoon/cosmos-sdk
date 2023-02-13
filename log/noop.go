@@ -1,12 +1,12 @@
 package log
 
-import cmlog "github.com/cometbft/cometbft/libs/log"
-
-var _ Logger = NoOp{}
+import (
+	cmlog "github.com/cometbft/cometbft/libs/log"
+)
 
 type NoOp struct{}
 
-func NewNopLogger() Logger {
+func NewNopLogger() cmlog.Logger {
 	return &NoOp{}
 }
 

@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/snapshots"
 	snapshottypes "cosmossdk.io/store/snapshots/types"
@@ -48,7 +49,7 @@ const ServerContextKey = sdk.ContextKey("server.context")
 type Context struct {
 	Viper  *viper.Viper
 	Config *cmtcfg.Config
-	Logger cmtlog.Logger
+	Logger log.Logger
 }
 
 // ErrorCode contains the exit code for server exit.
@@ -64,11 +65,11 @@ func NewDefaultContext() *Context {
 	return NewContext(
 		viper.New(),
 		cmtcfg.DefaultConfig(),
-		cmtlog.NewTMLogger(cmtlog.NewSyncWriter(os.Stdout)),
+		log.NewLogger(),
 	)
 }
 
-func NewContext(v *viper.Viper, config *cmtcfg.Config, logger cmtlog.Logger) *Context {
+func NewContext(v *viper.Viper, config *cmtcfg.Config, logger log.Logger) *Context {
 	return &Context{v, config, logger}
 }
 

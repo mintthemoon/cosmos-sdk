@@ -1,29 +1,11 @@
 package log
 
 import (
-	"os"
-	"time"
-
 	cmtlog "github.com/cometbft/cometbft/libs/log"
 	"github.com/rs/zerolog"
 )
 
-// Defines commons keys for logging
-const ModuleKey = "module"
-
-var (
-	// ContextKey is used to store the logger in the context
-	ContextKey struct{}
-	_          Logger = (*CometZerologWrapper)(nil)
-)
-
-func NewZeroLogger(key, value string) *zerolog.Logger {
-	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.Kitchen}
-	logger := zerolog.New(output).With().Str(key, value).Timestamp().Logger()
-	return &logger
-}
-
-// TODO: add filtered logging in ZeroLog: https://github.com/cosmos/cosmos-sdk/pull/13236 / https://github.com/cosmos/cosmos-sdk/issues/13699#issuecomment-1354887644
+var _ cmtlog.Logger = (*CometZerologWrapper)(nil)
 
 // CometZerologWrapper provides a wrapper around a zerolog.Logger instance. It implements
 // CometBFT's Logger interface.
