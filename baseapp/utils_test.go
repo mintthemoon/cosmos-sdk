@@ -54,7 +54,7 @@ var ParamStoreKey = []byte("paramstore")
 
 func defaultLogger() log.Logger {
 	if testing.Verbose() {
-		return log.NewZeroLogger("module", "baseapp/test")
+		return log.NewLoggerWithKV("module", "baseapp/test")
 	}
 
 	return log.NewNopLogger()

@@ -14,7 +14,7 @@ import (
 func SetupApp() (abci.Application, func(), error) {
 	var logger log.Logger
 	if testing.Verbose() {
-		logger = log.NewZeroLogger("module", "mock")
+		logger = log.NewLoggerWithKV("module", "mock")
 	} else {
 		logger = log.NewNopLogger()
 	}
