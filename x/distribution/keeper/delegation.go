@@ -213,12 +213,9 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val stakingtypes.Vali
 
 func (k Keeper) withdrawAllDelegationRewards(ctx sdk.Context, delAddr sdk.AccAddress) (sdk.Coins, error) {
 	rewardsTotal := sdk.Coins{}
-	k.stakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
-		valAddr := val.GetOperator()
-		del := k.stakingKeeper.Delegation(ctx, delAddr, valAddr)
-		if del == nil {
-			return false
-		}
+	k.stakingKeeper.IterateDelegations(ctx, delAddr, func(_ int64, del stakingtypes.DelegationI) (stop bool) {
+		valAddr := del.GetValidatorAddr()
+		val := k.stakingKeeper.Validator(ctx, valAddr)
 		// end current period and calculate rewards
 		endingPeriod := k.IncrementValidatorPeriod(ctx, val)
 		rewardsRaw := k.CalculateDelegationRewards(ctx, val, del, endingPeriod)
