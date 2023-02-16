@@ -210,3 +210,69 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val stakingtypes.Vali
 
 	return finalRewards, nil
 }
+
+func (k Keeper) withdrawAllDelegationRewards(ctx sdk.Context, delAddr sdk.AccAddress) (sdk.Coins, error) {
+	rewardsTotal := sdk.Coins{}
+	k.stakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
+		valAddr := val.GetOperator()
+		del := k.stakingKeeper.Delegation(ctx, delAddr, valAddr)
+		if del == nil {
+			return false
+		}
+		// end current period and calculate rewards
+		endingPeriod := k.IncrementValidatorPeriod(ctx, val)
+		rewardsRaw := k.CalculateDelegationRewards(ctx, val, del, endingPeriod)
+		outstanding := k.GetValidatorOutstandingRewardsCoins(ctx, del.GetValidatorAddr())
+		// defensive edge case may happen on the very final digits
+		// of the decCoins due to operation order of the distribution mechanism.
+		rewards := rewardsRaw.Intersect(outstanding)
+		if !rewards.IsEqual(rewardsRaw) {
+			logger := k.Logger(ctx)
+			logger.Info(
+				"rounding error withdrawing rewards from validator",
+				"delegator", del.GetDelegatorAddr().String(),
+				"validator", val.GetOperator().String(),
+				"got", rewards.String(),
+				"expected", rewardsRaw.String(),
+			)
+		}
+		// truncate reward dec coins, return remainder to community pool
+		finalRewards, remainder := rewards.TruncateDecimal()
+		k.SetValidatorOutstandingRewards(ctx, del.GetValidatorAddr(), types.ValidatorOutstandingRewards{Rewards: outstanding.Sub(rewards)})
+		feePool := k.GetFeePool(ctx)
+		feePool.CommunityPool = feePool.CommunityPool.Add(remainder...)
+		k.SetFeePool(ctx, feePool)
+		k.initializeDelegation(ctx, valAddr, delAddr)
+		rewardsTotal = rewardsTotal.Add(finalRewards...)
+		if finalRewards.IsZero() {
+			baseDenom, _ := sdk.GetBaseDenom()
+			finalRewards = sdk.Coins{sdk.Coin{
+				Denom:  baseDenom,
+				Amount: sdk.ZeroInt(),
+			}}
+		}
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeWithdrawRewards,
+				sdk.NewAttribute(sdk.AttributeKeyAmount, finalRewards.String()),
+				sdk.NewAttribute(types.AttributeKeyValidator, val.GetOperator().String()),
+			),
+		)
+		return false
+	})
+	// add coins to user account
+	if !rewardsTotal.IsZero() {
+		withdrawAddr := k.GetDelegatorWithdrawAddr(ctx, delAddr)
+		err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, withdrawAddr, rewardsTotal)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		baseDenom, _ := sdk.GetBaseDenom()
+		rewardsTotal = sdk.Coins{sdk.Coin{
+			Denom:  baseDenom,
+			Amount: sdk.ZeroInt(),
+		}}
+	}
+	return rewardsTotal, nil
+}

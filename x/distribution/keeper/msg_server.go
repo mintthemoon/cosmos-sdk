@@ -87,6 +87,37 @@ func (k msgServer) WithdrawDelegatorReward(goCtx context.Context, msg *types.Msg
 	return &types.MsgWithdrawDelegatorRewardResponse{Amount: amount}, nil
 }
 
+func (k msgServer) WithdrawAllDelegatorRewards(goCtx context.Context, msg *types.MsgWithdrawAllDelegatorRewards) (*types.MsgWithdrawAllDelegatorRewardsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	delAddr, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
+	if err != nil {
+		return nil, err
+	}
+	amount, err := k.WithdrawAllDelegationRewards(ctx, delAddr)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		for _, a := range amount {
+			if a.Amount.IsInt64() {
+				telemetry.SetGaugeWithLabels(
+					[]string{"tx", "msg", "withdraw_reward"},
+					float32(a.Amount.Int64()),
+					[]metrics.Label{telemetry.NewLabel("denom", a.Denom)},
+				)
+			}
+		}
+	}()
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAddress),
+		),
+	)
+	return &types.MsgWithdrawAllDelegatorRewardsResponse{Amount: amount}, nil
+}
+
 func (k msgServer) WithdrawValidatorCommission(goCtx context.Context, msg *types.MsgWithdrawValidatorCommission) (*types.MsgWithdrawValidatorCommissionResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 

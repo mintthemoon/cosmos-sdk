@@ -127,7 +127,6 @@ func NewWithdrawAllRewardsCmd() *cobra.Command {
 		Short: "withdraw all delegations rewards for a delegator",
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`Withdraw all rewards for a single delegator.
-Note that if you use this command with --%[2]s=%[3]s or --%[2]s=%[4]s, the %[5]s flag will automatically be set to 0.
 
 Example:
 $ %[1]s tx distribution withdraw-all-rewards --from mykey
@@ -149,36 +148,11 @@ $ %[1]s tx distribution withdraw-all-rewards --from mykey
 				return fmt.Errorf("cannot generate tx in offline mode")
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
-			delValsRes, err := queryClient.DelegatorValidators(cmd.Context(), &types.QueryDelegatorValidatorsRequest{DelegatorAddress: delAddr.String()})
-			if err != nil {
-				return err
-			}
-
-			validators := delValsRes.Validators
-			// build multi-message transaction
-			msgs := make([]sdk.Msg, 0, len(validators))
-			for _, valAddr := range validators {
-				val, err := sdk.ValAddressFromBech32(valAddr)
-				if err != nil {
-					return err
-				}
-
-				msg := types.NewMsgWithdrawDelegatorReward(delAddr, val)
-				msgs = append(msgs, msg)
-			}
-
-			chunkSize, _ := cmd.Flags().GetInt(FlagMaxMessagesPerTx)
-			if !clientCtx.GenerateOnly && clientCtx.BroadcastMode != flags.BroadcastBlock && chunkSize > 0 {
-				return fmt.Errorf("cannot use broadcast mode %[1]s with %[2]s != 0",
-					clientCtx.BroadcastMode, FlagMaxMessagesPerTx)
-			}
-
-			return newSplitAndApply(tx.GenerateOrBroadcastTxCLI, clientCtx, cmd.Flags(), msgs, chunkSize)
+			msgs := []sdk.Msg{types.NewMsgWithdrawAllDelegatorRewards(delAddr)}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msgs...)
 		},
 	}
 
-	cmd.Flags().Int(FlagMaxMessagesPerTx, MaxMessagesPerTxDefault, "Limit the number of messages per tx (0 for unlimited)")
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd

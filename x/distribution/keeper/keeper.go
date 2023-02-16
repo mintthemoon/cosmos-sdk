@@ -109,6 +109,11 @@ func (k Keeper) WithdrawDelegationRewards(ctx sdk.Context, delAddr sdk.AccAddres
 	return rewards, nil
 }
 
+// withdraw all delegation rewards for a delegator
+func (k Keeper) WithdrawAllDelegationRewards(ctx sdk.Context, delAddr sdk.AccAddress) (sdk.Coins, error) {
+	return k.withdrawAllDelegationRewards(ctx, delAddr)
+}
+
 // withdraw validator commission
 func (k Keeper) WithdrawValidatorCommission(ctx sdk.Context, valAddr sdk.ValAddress) (sdk.Coins, error) {
 	// fetch validator accumulated commission

@@ -9,6 +9,7 @@ import (
 const (
 	TypeMsgSetWithdrawAddress          = "set_withdraw_address"
 	TypeMsgWithdrawDelegatorReward     = "withdraw_delegator_reward"
+	TypeMsgWithdrawAllDelegatorRewards = "withdraw_all_delegator_rewards"
 	TypeMsgWithdrawValidatorCommission = "withdraw_validator_commission"
 	TypeMsgFundCommunityPool           = "fund_community_pool"
 )
@@ -82,6 +83,35 @@ func (msg MsgWithdrawDelegatorReward) ValidateBasic() error {
 	}
 	return nil
 }
+
+func NewMsgWithdrawAllDelegatorRewards(delAddr sdk.AccAddress) *MsgWithdrawAllDelegatorRewards {
+	return &MsgWithdrawAllDelegatorRewards{
+		DelegatorAddress: delAddr.String(),
+	}
+}
+
+func (msg MsgWithdrawAllDelegatorRewards) Route() string { return ModuleName }
+func (msg MsgWithdrawAllDelegatorRewards) Type() string  { return TypeMsgWithdrawAllDelegatorRewards }
+
+// Return address that must sign over msg.GetSignBytes()
+func (msg MsgWithdrawAllDelegatorRewards) GetSigners() []sdk.AccAddress {
+	delegator, _ := sdk.AccAddressFromBech32(msg.DelegatorAddress)
+	return []sdk.AccAddress{delegator}
+}
+
+// get the bytes for the message signer to sign on
+func (msg MsgWithdrawAllDelegatorRewards) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(&msg)
+	return sdk.MustSortJSON(bz)
+}
+
+// quick validity check
+func (msg MsgWithdrawAllDelegatorRewards) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.DelegatorAddress); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf("invalid delegator address: %s", err)
+	}
+	return nil
+} 
 
 func NewMsgWithdrawValidatorCommission(valAddr sdk.ValAddress) *MsgWithdrawValidatorCommission {
 	return &MsgWithdrawValidatorCommission{
